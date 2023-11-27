@@ -1,0 +1,38 @@
+syntax = "proto3";
+option java_multiple_files = true;
+option java_package = "org.example.model";
+
+message SizeRequest {
+  int32 size = 1;
+}
+
+message Product {
+  string name = 1;
+  int32 year = 2;
+  double price = 3;
+  int32 quantity = 4;
+}
+
+message ProductList {
+  repeated Product product = 1;
+}
+
+message Summary {
+  map<int32, int32> mapYear = 1;
+}
+
+message DeliveryResult {
+  repeated Product products = 1;
+  int64 timestamp = 2;
+}
+
+service ProductService {
+  // Unary PRC
+  rpc getProducts(SizeRequest) returns (ProductList);
+  // Server Stream
+  rpc getProductStream(SizeRequest) returns (stream Product);
+  // Client Stream
+  rpc sendProduct(stream Product) returns (Summary);
+  // Bi-Stream
+  rpc delivery(stream Product) returns (stream DeliveryResult);
+}
