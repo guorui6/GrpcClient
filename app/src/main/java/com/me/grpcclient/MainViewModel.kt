@@ -18,7 +18,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.moshi.MoshiConverterFactory
 
-private const val address = "192.168.1.136"
+private const val address = "192.168.1.159"
 private const val portGRPC = 9090
 private const val portREST = 8080
 
