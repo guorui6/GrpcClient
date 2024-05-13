@@ -4,8 +4,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lime.supply.grpc.model.MapViewRequest
+import com.lime.supply.grpc.model.MapViewResponse
+import com.lime.supply.grpc.model.MapViewServiceGrpc
 import com.me.grpcclient.rest.RestService
 import io.grpc.ManagedChannelBuilder
+import io.grpc.TlsChannelCredentials
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,9 +20,8 @@ import org.example.model.SizeRequest
 import org.example.model.Summary
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.converter.moshi.MoshiConverterFactory
 
-private const val address = "192.168.1.159"
+private const val address = "192.168.1.143"
 private const val portGRPC = 9090
 private const val portREST = 8080
 
@@ -36,6 +39,14 @@ class MainViewModel : ViewModel() {
         ProductServiceGrpc.newBlockingStub(channel)
             .withMaxInboundMessageSize(Int.MAX_VALUE)
             .withMaxOutboundMessageSize(Int.MAX_VALUE)
+    }
+    private val mapStub by lazy {
+        MapViewServiceGrpc.newBlockingStub(channel)
+            .withMaxInboundMessageSize(Int.MAX_VALUE)
+            .withMaxOutboundMessageSize(Int.MAX_VALUE)
+    }
+    private val mapAsyncStub by lazy {
+        MapViewServiceGrpc.newStub(channel)
     }
     private val asyncStub by lazy { ProductServiceGrpc.newStub(channel) }
 
@@ -84,6 +95,25 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun getMapResponse() {
+        viewModelScope.launch(context = Dispatchers.IO) {
+            val request = MapViewRequest.newBuilder().build()
+            mapAsyncStub.mapView(request, object : StreamObserver<MapViewResponse> {
+                override fun onNext(value: MapViewResponse?) {
+                    _result.postValue("Map response: ${value?.toString()}")
+                }
+
+                override fun onCompleted() {
+                    _result.postValue("Map response completed")
+                }
+
+                override fun onError(t: Throwable?) {
+                    _result.postValue("Map response error: ${t?.message}")
+                }
+            })
+        }
+    }
+
     fun getProductsRestful(size: Int) {
         viewModelScope.launch(context = Dispatchers.IO) {
             val retrofit = Retrofit.Builder()
@@ -96,7 +126,7 @@ class MainViewModel : ViewModel() {
             val end = System.currentTimeMillis()
 //            val res = response.body()?.size.toString()
 //                .plus(" products received. Time used: ${end - start} ms.")
-            _result.postValue("body:" + response.body()?.toString()?:"")
+            _result.postValue("body:" + response.body()?.toString() ?: "")
         }
     }
 

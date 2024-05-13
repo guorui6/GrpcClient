@@ -23,6 +23,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        binding.btnGetMap.setOnClickListener {
+            viewModel.getMapResponse()
+        }
+
         binding.btnGetProductsRestful.setOnClickListener {
             binding.etSize.let {
                 it.text.toString().toIntOrNull()?.let { size ->
