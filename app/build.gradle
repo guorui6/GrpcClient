@@ -3,6 +3,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.protobuf' version '0.9.1'
+    id 'com.google.dagger.hilt.android'
 }
 
 android {
@@ -96,4 +97,8 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-moshi:2.9.0'
 
     kapt("com.squareup.moshi:moshi-kotlin-codegen:1.14.0")
+
+    // hilt
+    implementation("com.google.dagger:hilt-android:2.44")
+    kapt("com.google.dagger:hilt-android-compiler:2.44")
 }
