@@ -8,50 +8,36 @@ import com.lime.supply.grpc.model.MapViewRequest
 import com.lime.supply.grpc.model.MapViewResponse
 import com.lime.supply.grpc.model.MapViewServiceGrpc
 import com.me.grpcclient.rest.RestService
-import io.grpc.ManagedChannelBuilder
-import io.grpc.TlsChannelCredentials
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.example.model.DeliveryResult
 import org.example.model.Product
 import org.example.model.ProductServiceGrpc
+import org.example.model.ProductServiceGrpc.ProductServiceBlockingStub
 import org.example.model.SizeRequest
 import org.example.model.Summary
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Inject
 
-private const val address = "192.168.1.143"
-private const val portGRPC = 9090
-private const val portREST = 8080
 
-class MainViewModel : ViewModel() {
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val mapViewStub: MapViewServiceGrpc.MapViewServiceStub,
+    private val productServiceStub: ProductServiceGrpc.ProductServiceStub,
+    private val productBlockingStub: ProductServiceBlockingStub,
+    private val restService: RestService,
+) : ViewModel() {
+
     private val _result = MutableLiveData<String>()
     val result: LiveData<String> = _result
 
     private val _resultToast = MutableLiveData<String>()
     val resultToast: LiveData<String> = _resultToast
 
-    private val channel by lazy {
-        ManagedChannelBuilder.forAddress(address, portGRPC).usePlaintext().build()
-    }
-    private val stub by lazy {
-        ProductServiceGrpc.newBlockingStub(channel)
-            .withMaxInboundMessageSize(Int.MAX_VALUE)
-            .withMaxOutboundMessageSize(Int.MAX_VALUE)
-    }
-    private val mapStub by lazy {
-        MapViewServiceGrpc.newBlockingStub(channel)
-            .withMaxInboundMessageSize(Int.MAX_VALUE)
-            .withMaxOutboundMessageSize(Int.MAX_VALUE)
-    }
-    private val mapAsyncStub by lazy {
-        MapViewServiceGrpc.newStub(channel)
-    }
-    private val asyncStub by lazy { ProductServiceGrpc.newStub(channel) }
 
     private val requestForClientStream: StreamObserver<Product> by lazy {
-        asyncStub.sendProduct(object : StreamObserver<Summary> {
+        productServiceStub.sendProduct(object : StreamObserver<Summary> {
             override fun onNext(summary: Summary?) {
                 _result.postValue("Message from server: ${summary.toString()}")
             }
@@ -67,7 +53,7 @@ class MainViewModel : ViewModel() {
     }
 
     private val requestForBiStream: StreamObserver<Product> by lazy {
-        asyncStub.delivery(object : StreamObserver<DeliveryResult> {
+        productServiceStub.delivery(object : StreamObserver<DeliveryResult> {
             override fun onNext(summary: DeliveryResult?) {
                 _result.postValue("Message from server: ${summary.toString()}")
             }
@@ -86,7 +72,7 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch(context = Dispatchers.IO) {
             val request = SizeRequest.newBuilder().setSize(size).build()
             val start = System.currentTimeMillis()
-            val response = stub.getProducts(request)
+            val response = productBlockingStub.getProducts(request)
             val products = response.productList
             val end = System.currentTimeMillis()
             val res = products.size.toString()
@@ -98,7 +84,7 @@ class MainViewModel : ViewModel() {
     fun getMapResponse() {
         viewModelScope.launch(context = Dispatchers.IO) {
             val request = MapViewRequest.newBuilder().build()
-            mapAsyncStub.mapView(request, object : StreamObserver<MapViewResponse> {
+            mapViewStub.mapView(request, object : StreamObserver<MapViewResponse> {
                 override fun onNext(value: MapViewResponse?) {
                     _result.postValue("Map response: ${value?.toString()}")
                 }
@@ -116,24 +102,19 @@ class MainViewModel : ViewModel() {
 
     fun getProductsRestful(size: Int) {
         viewModelScope.launch(context = Dispatchers.IO) {
-            val retrofit = Retrofit.Builder()
-                .baseUrl("http://$address:$portREST/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-            val restService = retrofit.create(RestService::class.java)
             val start = System.currentTimeMillis()
             val response = restService.getProducts(size)
             val end = System.currentTimeMillis()
-//            val res = response.body()?.size.toString()
-//                .plus(" products received. Time used: ${end - start} ms.")
-            _result.postValue("body:" + response.body()?.toString() ?: "")
+            _result.postValue(
+                ("body:" + response.size + " time used: " + (end - start))
+            )
         }
     }
 
     fun getProductsGrpcWithPayload(size: Int) {
         viewModelScope.launch(context = Dispatchers.IO) {
             val request = SizeRequest.newBuilder().setSize(size).build()
-            asyncStub.getProductStream(request, object : StreamObserver<Product> {
+            productServiceStub.getProductStream(request, object : StreamObserver<Product> {
                 override fun onNext(value: Product?) {
                     val name = value?.name
                     val year = value?.year
