@@ -1,83 +1,32 @@
 package com.me.grpcclient
 
+import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.me.grpcclient.databinding.ActivityMainBinding
+import com.me.grpcclient.databinding.MainActivityBinding
+import com.me.grpcclient.features.bistream.BiStreamActivity
+import com.me.grpcclient.features.serverstreaming.ServerStreamingActivity
+import com.me.grpcclient.features.clientstream.ClientSteamingActivity
+import com.me.grpcclient.features.unary.UnaryActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-
-    private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
-    private val viewModel: MainViewModel by viewModels()
-
+    private val binding by lazy { MainActivityBinding.inflate(layoutInflater) }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-
-        binding.btnGetProductsGrpc.setOnClickListener {
-            binding.etSize.let {
-                it.text.toString().toIntOrNull()?.let { size ->
-                    viewModel.getProductsGrpc(size)
-                }
-            }
+        binding.unary.setOnClickListener {
+            startActivity(Intent(this, UnaryActivity::class.java))
         }
-
-        binding.btnGetMap.setOnClickListener {
-            viewModel.getMapResponse()
+        binding.clientStreaming.setOnClickListener {
+            startActivity(Intent(this, ServerStreamingActivity::class.java))
         }
-
-        binding.btnGetProductsRestful.setOnClickListener {
-            binding.etSize.let {
-                it.text.toString().toIntOrNull()?.let { size ->
-                    viewModel.getProductsRestful(size)
-                }
-            }
+        binding.serverStreaming.setOnClickListener {
+            startActivity(Intent(this, ClientSteamingActivity::class.java))
         }
-
-        binding.grpcServerStream.setOnClickListener {
-            binding.etSize.let {
-                it.text.toString().toIntOrNull()?.let { size ->
-                    viewModel.getProductsGrpcWithPayload(size)
-                }
-            }
+        binding.biStreaming.setOnClickListener {
+            startActivity(Intent(this, BiStreamActivity::class.java))
         }
-
-        binding.grpcClientStream.setOnClickListener {
-            binding.etProduct.text?.let {
-                it.toString().let { product ->
-                    viewModel.grpcClientStream(product)
-                }
-            }
-        }
-
-        binding.grpcClientStreamFinish.setOnClickListener {
-            viewModel.grpcClientStreamComplete()
-        }
-
-        binding.grpcBiStream.setOnClickListener {
-            binding.etProduct.text?.let {
-                it.toString().let { product ->
-                    viewModel.grpcBiStream(product)
-                }
-            }
-        }
-
-        binding.grpcBiStreamFinish.setOnClickListener {
-            viewModel.grpcBiStreamCompleted()
-        }
-
-        viewModel.result.observe(this) {
-            binding.resultTextView.text = it
-        }
-
-        viewModel.resultToast.observe(this) {
-            Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
-        }
-
-        binding.clear.setOnClickListener { binding.resultTextView.text = "" }
     }
-
 }

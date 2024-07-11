@@ -4,8 +4,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:allowBackup="true"
         android:name=".GrpcApp"
+        android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -26,6 +26,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".features.bistream.BiStreamActivity" />
+        <activity android:name=".features.unary.UnaryActivity" />
+        <activity android:name=".features.serverstreaming.ServerStreamingActivity" />
+        <activity android:name=".features.clientstream.ClientSteamingActivity" />
     </application>
 
 </manifest>
