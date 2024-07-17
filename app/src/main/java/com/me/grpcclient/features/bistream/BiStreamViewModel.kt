@@ -43,13 +43,30 @@ class BiStreamViewModel @Inject constructor(
     fun sendProductToServer(name: String, year: Int) {
         viewModelScope.launch(context = Dispatchers.IO) {
             val product = Product.newBuilder().setName(name).setYear(year).build()
-            biStream.onNext(product)
+            try {
+                biStream.onNext(product)
+            } catch (e: Exception) {
+                _resultToast.postValue("Server error: ${e.message}")
+            }
         }
     }
 
     fun tellServerCompleted() {
         viewModelScope.launch(context = Dispatchers.IO) {
+            try {
+                biStream.onCompleted()
+            } catch (e: Exception) {
+                _resultToast.postValue("Server error: ${e.message}")
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
             biStream.onCompleted()
+        } catch (e: Exception) {
+            _resultToast.postValue("Server error: ${e.message}")
         }
     }
 }

@@ -41,10 +41,27 @@ class ClientStreamingViewModel @Inject constructor(
 
     fun sendProductToServer(name: String, year: Int) {
         val product = Product.newBuilder().setName(name).setYear(year).build()
-        productStream.onNext(product)
+        try {
+            productStream.onNext(product)
+        } catch (e: Exception) {
+            _resultToast.postValue("Server error: ${e.message}")
+        }
     }
 
     fun tellServerComplete() {
-        productStream.onCompleted()
+        try {
+            productStream.onCompleted()
+        } catch (e: Exception) {
+            _resultToast.postValue("Server error: ${e.message}")
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            productStream.onCompleted()
+        } catch (e: Exception) {
+            _resultToast.postValue("Server error: ${e.message}")
+        }
     }
 }

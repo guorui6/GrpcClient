@@ -38,9 +38,11 @@ class ServerStreamingViewModel @Inject constructor(
         }
     }
 
+    private var streamingObserver: StreamObserver<Product>? = null
+
     fun getProductsByAsyncStub(size: Int) {
         val request = SizeRequest.newBuilder().setSize(size).build()
-        productServiceStub.getProductStream(request, object : StreamObserver<Product> {
+        streamingObserver = object : StreamObserver<Product> {
             override fun onNext(product: Product) {
                 _result.postValue("Product: ${product.name}, ${product.year}")
             }
@@ -52,6 +54,16 @@ class ServerStreamingViewModel @Inject constructor(
             override fun onError(t: Throwable) {
                 _result.postValue("Server error: ${t.message}")
             }
-        })
+        }
+        try {
+            productServiceStub.getProductStream(request, streamingObserver)
+        } catch (e: Exception) {
+            _resultToast.postValue("Failed to start streaming: ${e.message}")
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        streamingObserver?.onCompleted()
     }
 }

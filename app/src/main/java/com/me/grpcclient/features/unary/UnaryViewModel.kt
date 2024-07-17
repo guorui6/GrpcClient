@@ -39,20 +39,26 @@ class UnaryViewModel @Inject constructor(
 
     fun getProductListWithAsyncStub(size: Int) {
         val request = SizeRequest.newBuilder().setSize(size).build()
-        productServiceStub.getProducts(request, object : io.grpc.stub.StreamObserver<org.example.model.ProductList> {
-            override fun onNext(value: org.example.model.ProductList) {
-                val products = value.productList.map { it.name + ", " + it.year }
-                val res = products.joinToString("\n")
-                _result.postValue(res)
-            }
+        try {
+            productServiceStub.getProducts(
+                request,
+                object : io.grpc.stub.StreamObserver<org.example.model.ProductList> {
+                    override fun onNext(value: org.example.model.ProductList) {
+                        val products = value.productList.map { it.name + ", " + it.year }
+                        val res = products.joinToString("\n")
+                        _result.postValue(res)
+                    }
 
-            override fun onError(t: Throwable) {
-                _result.postValue("Server error: ${t.message}")
-            }
+                    override fun onError(t: Throwable) {
+                        _result.postValue("Server error: ${t.message}")
+                    }
 
-            override fun onCompleted() {
-                _resultToast.postValue("Server received complete operation from client!")
-            }
-        })
+                    override fun onCompleted() {
+                        _resultToast.postValue("Server received complete operation from client!")
+                    }
+                })
+        } catch (e: Exception) {
+            _result.postValue("Server error: ${e.message}")
+        }
     }
 }
